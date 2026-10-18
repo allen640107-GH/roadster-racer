@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Roadster Racer · Tesla Roadster 賽道狂飆</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="panel tl">
+    <div class="row"><span class="lab">圈數</span><span id="lap" class="val">1 / 3</span></div>
+    <div class="row"><span class="lab">單圈時間</span><span id="laptime" class="val mono">0:00.000</span></div>
+    <div class="row"><span class="lab">上一圈</span><span id="lastlap" class="val mono">--:--.---</span></div>
+    <div class="row"><span class="lab">最佳圈速</span><span id="bestlap" class="val mono best">--:--.---</span></div>
+    <div class="row small"><span class="lab">檢查點</span><span id="cps" class="val">○ ○ ○</span></div>
+  </div>
+  <canvas id="minimap" width="200" height="200"></canvas>
+  <div id="flightHud">
+    <div class="fh-title">飛行模式</div>
+    <div class="fh-row"><span>推進劑</span><div class="bar"><i id="fuelFill"></i></div></div>
+    <div class="fh-row"><span>推力</span><div class="bar thrust"><i id="thrustFill"></i></div></div>
+  </div>
+  <div id="speedo">
+    <svg viewBox="0 0 200 120" class="gauge"><path class="g-bg" d="M20 110 A 80 80 0 0 1 180 110"/><path id="garc" class="g-fg" d="M20 110 A 80 80 0 0 1 180 110"/></svg>
+    <div class="spd"><span id="speed">0</span><small>km/h</small></div>
+    <div class="spdlab">速度 <span id="gearflag"></span></div>
+  </div>
+  <div id="msg"></div>
+  <div id="sub"></div>
+  <div id="toast"></div>
+  <div id="help" class="panel">
+    <b>操作說明</b>
+    <div>W / ↑ 油門　S / ↓ 煞車・倒車</div>
+    <div>A D / ← → 轉向　Space 手煞車（甩尾）</div>
+    <div><kbd>F</kbd> 飛行（冷氣推進）　飛行中 Space = 加力</div>
+    <div>R 重置車輛　C 切換鏡頭　M 靜音　H 隱藏說明</div>
+  </div>
+  <div id="fps"></div>
+</div>
+
+<div id="touch" class="hidden">
+  <div class="tleft">
+    <button type="button" data-k="left" class="tb steer">◀</button>
+    <button type="button" data-k="right" class="tb steer">▶</button>
+  </div>
+  <div class="tright">
+    <button type="button" data-k="flight" class="tb flight">飛行</button>
+    <button type="button" data-k="handbrake" class="tb hb">手煞車<br><small>加力</small></button>
+    <button type="button" data-k="brake" class="tb br">煞車</button>
+    <button type="button" data-k="throttle" class="tb gas">油門</button>
+  </div>
+  <div class="ttop">
+    <button type="button" data-k="reset" class="tb sm">重置</button>
+    <button type="button" data-k="camera" class="tb sm">鏡頭</button>
+    <button type="button" data-k="mute" class="tb sm">聲音</button>
+    <button type="button" id="tiltToggle" class="tb sm tilt-toggle" aria-pressed="false">傾斜轉向</button>
+    <div id="tiltTip" class="tilt-tip hidden">請允許動作感應器以使用傾斜轉向</div>
+  </div>
+</div>
+
+<div id="start">
+  <div class="card">
+    <div class="brand">TESLA ROADSTER · ROCKET</div>
+    <h1>賽道狂飆</h1>
+    <p class="tag">2026 航太楔形 · 冷氣推進飛行 · 海岸山脈環形賽道 · 3 圈</p>
+    <div id="loading">載入中…</div>
+    <button id="go" class="hidden">開始比賽</button>
+    <div class="keys">
+      <div><kbd>W</kbd><kbd>↑</kbd> 油門 / 爬升</div><div><kbd>S</kbd><kbd>↓</kbd> 煞車 / 下降</div>
+      <div><kbd>A</kbd><kbd>D</kbd><kbd>←</kbd><kbd>→</kbd> 轉向</div><div><kbd>Space</kbd> 手煞車 / 飛行加力</div>
+      <div><kbd>F</kbd> 飛行模式</div><div><kbd>R</kbd> 重置　<kbd>C</kbd> 鏡頭</div>
+    </div>
+    <p class="note">手機：橫向握持 · 多點觸控 · 傾斜轉向（可關）· 按住「飛行」啟動推進器</p>
+  </div>
+</div>
+<div id="err" class="hidden"></div>
+<script type="module" src="js/main.js"></script>
+<script>window.addEventListener('error', e => { const d = document.getElementById('err'); d.classList.remove('hidden'); d.textContent = '錯誤：' + e.message; });</script>
+</body>
+</html>
