@@ -89,3 +89,14 @@ body.touch #flightHud{top:max(100px,calc(env(safe-area-inset-top)+96px))}
 .tb.tilt-toggle{width:auto;min-width:64px;padding:0 8px;height:42px;font-size:12px;letter-spacing:.05em;white-space:nowrap}
 .tb.tilt-toggle.on{background:rgba(40,140,255,.55);border-color:rgba(140,200,255,.75)}
 .tilt-tip{pointer-events:none;max-width:120px;font-size:11px;line-height:1.35;opacity:.9;color:#ffd54a;text-shadow:0 1px 4px rgba(0,0,0,.8);text-align:right;margin-top:2px}
+
+/* Cockpit cam: keep windshield clear — tuck HUD to edges / hide clutter */
+body.cockpit-cam .tl,
+body.cockpit-cam #minimap,
+body.cockpit-cam #help,
+body.cockpit-cam #speedo,
+body.cockpit-cam #flightHud,
+body.cockpit-cam #fps{opacity:0;pointer-events:none;transition:opacity .2s}
+body.cockpit-cam #msg,
+body.cockpit-cam #sub{top:12%;font-size:64px}
+body.cockpit-cam #sub{top:calc(12% + 72px);font-size:18px}

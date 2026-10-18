@@ -50,7 +50,7 @@ const car = new Car(world, chassisMat);
 const mats = createMaterials();
 const carGroup = new THREE.Group(); scene.add(carGroup);
 const REST_Y = 0.465; // chassis origin height at rest (measured)
-const { group: body, tailMat, reverseMat, headMat, wingGroup, fanBlades, rearThruster, rearGlow, perimeter, plumeGroup } = createCarBody(mats);
+const { group: body, tailMat, reverseMat, headMat, wingGroup, fanBlades, rearThruster, rearGlow, perimeter, plumeGroup, cockpitHide } = createCarBody(mats);
 body.position.y = -REST_Y; carGroup.add(body);
 const wheels = [0, 1, 2, 3].map((i) => { const w = createWheel(mats, i % 2 === 0, i >= 2); scene.add(w.outer); return w; });
 
@@ -128,9 +128,9 @@ document.querySelectorAll('#touch .tb').forEach((b) => {
 document.getElementById('touch').addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
 // ---------- gyroscope / DeviceOrientation tilt steering
-const TILT_DEADZONE = 9;   // degrees — ignore slight tilts
-const TILT_MAX = 36;       // degrees → full steer (wider = gentler)
-const TILT_MAX_STEER = 0.82; // cap tilt steer so it never reaches digital full
+const TILT_DEADZONE = 5;   // degrees — ignore slight tilts (responsive)
+const TILT_MAX = 28;       // degrees → full steer
+const TILT_MAX_STEER = 1.0; // full digital steer available
 const tilt = {
   want: false,       // user toggle preference
   allowed: false,    // sensor permission / available
@@ -159,10 +159,9 @@ function orientationToTiltDeg(e) {
 function degToSteer(deg) {
   const a = Math.abs(deg);
   if (a <= TILT_DEADZONE) return 0;
-  // Soft ease-in: slight past deadzone stays mild; full only near TILT_MAX
+  // Mild smoothstep — responsive past deadzone, full near TILT_MAX
   let u = Math.min(1, (a - TILT_DEADZONE) / (TILT_MAX - TILT_DEADZONE));
-  u = u * u * (3 - 2 * u); // smoothstep
-  u = u * u;               // extra ease-in (quadratic on top)
+  u = u * u * (3 - 2 * u); // smoothstep only
   return (deg < 0 ? -1 : 1) * u * TILT_MAX_STEER;
 }
 function onDeviceOrientation(e) {
@@ -247,9 +246,9 @@ function readInput(dt) {
   let steer = steerKb;
   if (tilt.want && tilt.allowed && !(L || R)) {
     const targetTilt = degToSteer(tilt.rawDeg);
-    // Heavier low-pass so phone jitter / micro-tilts don't twitch the wheel
-    tilt.smoothed += (targetTilt - tilt.smoothed) * Math.min(1, dt * 4.2);
-    if (Math.abs(tilt.smoothed) < 0.03) tilt.smoothed = 0;
+    // Light low-pass — snappy but still filters sensor jitter
+    tilt.smoothed += (targetTilt - tilt.smoothed) * Math.min(1, dt * 9);
+    if (Math.abs(tilt.smoothed) < 0.02) tilt.smoothed = 0;
     steer = Math.max(-1, Math.min(1, tilt.smoothed));
   } else {
     tilt.smoothed += (0 - tilt.smoothed) * Math.min(1, dt * 8);
@@ -323,9 +322,10 @@ function updateCamera(dt) {
     if (!camInit) { camPos.copy(tmpV); camLook.copy(tmpV2); }
     camPos.lerp(tmpV, 1 - Math.exp(-dt * 12)); camLook.lerp(tmpV2, 1 - Math.exp(-dt * 16));
   } else if (camMode === 2) {
-    tmpV.set(0.33, 1.13 - REST_Y, -0.35).applyQuaternion(carGroup.quaternion).add(p);
-    tmpV2.set(0.33, 1.0 - REST_Y, 10).applyQuaternion(carGroup.quaternion).add(p);
-    camPos.copy(tmpV); camLook.copy(tmpV2); fov = 72;
+    // Clean driver POV: eye at head height, gaze over low dash through windshield
+    tmpV.set(0.26, 1.02 - REST_Y, -0.18).applyQuaternion(carGroup.quaternion).add(p);
+    tmpV2.set(0.22, 0.88 - REST_Y, 14).applyQuaternion(carGroup.quaternion).add(p);
+    camPos.copy(tmpV); camLook.copy(tmpV2); fov = 65;
   } else if (camMode === 4) {
     G.orbit = (G.orbit ?? 0.6) + dt * (G.orbitSpeed ?? 0.35);
     const r = G.orbitR ?? 6.0;
@@ -343,6 +343,10 @@ function updateCamera(dt) {
   camInit = true;
   camera.position.copy(camPos); camera.lookAt(camLook);
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix(); }
+  // Cockpit: hide HUD clutter + bulky interior meshes that block the windshield
+  const inCockpit = camMode === 2;
+  document.body.classList.toggle('cockpit-cam', inCockpit);
+  if (cockpitHide) cockpitHide.visible = !inCockpit;
   // shadow camera follows car
   sun.position.copy(p).addScaledVector(SUN_DIR, 120); sun.target.position.copy(p);
 }
@@ -515,7 +519,7 @@ function frame() {
   // Active wing: deploys with speed / flight
   const wingT = car.flying ? 1 : Math.min(1, kmh / 160);
   wingGroup.rotation.x = -0.35 * wingT;
-  wingGroup.position.y = 0.72 + 0.12 * wingT;
+  wingGroup.position.y = 0.96 + 0.14 * wingT;
   fanBlades.rotation.z += dt * (8 + kmh * 0.15 + (car.flying ? 20 : 0));
 
   // Thruster glow + cold-gas plumes
